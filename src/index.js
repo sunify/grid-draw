@@ -3,20 +3,42 @@ import "./styles.css";
 import runWithFps from "run-with-fps";
 import { Hexagon } from "./grid";
 import { Vector } from "v-for-vector";
+import * as dat from "dat.gui";
 
 const canvas = document.getElementById("app");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const PIECE_SCALE_FACTOR = 2;
+canvas.width = window.innerWidth * PIECE_SCALE_FACTOR;
+canvas.height = window.innerHeight * PIECE_SCALE_FACTOR;
+canvas.style.positon = "absolute";
+canvas.style.width = "100%";
+canvas.style.height = "100%";
+
+const isTooBright = (color) => color.reduce((a, b) => a + b, 0) > 340; // ToDo: improve algo (with hsl?)
+const params = {
+  backgroundColor: [0, 0, 0],
+  foregroundColor: "#FFF",
+  penWidth: 1,
+  showCenters: true,
+  erase() {
+    pieceCanvas.width = pieceCanvas.width;
+    forceRender();
+  }
+};
+const gui = new dat.GUI();
+gui.addColor(params, "backgroundColor").onChange(forceRender);
+gui.addColor(params, "foregroundColor").onChange(forceRender);
+gui.add(params, "penWidth", 0.5, 10, 0.5).onChange(forceRender);
+gui.add(params, "showCenters").onChange(forceRender);
+gui.add(params, "erase");
 
 const grid = [];
 
-const lerp = (n1, n2, t) => n1 + (n2 - n1) * t;
-
-const CELL_SIZE = 300;
+const CELL_SIZE = 150;
 const sample = new Hexagon(0, 0, CELL_SIZE);
 let y = -sample.height;
+// todo: do not prebuild grid it's wasteful and unnecessary
 for (let i = 0; i < Math.ceil(canvas.height / CELL_SIZE) + 5; i += 1) {
   let x = -sample.width - (i % 2 ? sample.width / 2 : 0);
   for (let j = 0; j < Math.ceil(canvas.width / CELL_SIZE) + 5; j += 1) {
@@ -27,20 +49,14 @@ for (let i = 0; i < Math.ceil(canvas.height / CELL_SIZE) + 5; i += 1) {
   y += sample.height - sample.height / 4;
 }
 
-const mouse = Vector.cartesian(0, 0);
-document.addEventListener("mousemove", (e) => {
-  mouse.x = e.pageX;
-  mouse.y = e.pageY;
-});
-
 function sign(a, b, c) {
   return (a.x - c.x) * (b.y - c.y) - (b.x - c.x) * (a.y - c.y);
 }
 
-function PointInTriangle(p, a, b, c) {
-  const d1 = sign(p, a, b);
-  const d2 = sign(p, b, c);
-  const d3 = sign(p, c, a);
+function isInTriangle(p, tri) {
+  const d1 = sign(p, tri.a, tri.b);
+  const d2 = sign(p, tri.b, tri.c);
+  const d3 = sign(p, tri.c, tri.a);
 
   const has_neg = d1 < 0 || d2 < 0 || d3 < 0;
   const has_pos = d1 > 0 || d2 > 0 || d3 > 0;
@@ -48,87 +64,99 @@ function PointInTriangle(p, a, b, c) {
   return !(has_neg && has_pos);
 }
 
-function getCentroid(tri) {
-  return Vector.cartesian(
-    [tri.a.x, tri.b.x, tri.c.x].reduce((a, b) => a + b, 0) / 3,
-    [tri.a.y, tri.b.y, tri.c.y].reduce((a, b) => a + b, 0) / 3
-  );
-}
-
 const pieceCanvas = document.createElement("canvas");
 const pieceCtx = pieceCanvas.getContext("2d");
 pieceCanvas.width =
-  Math.max(sample.triangles[0].width, sample.triangles[0].height) * 2;
+  Math.max(sample.triangles[0].width, sample.triangles[0].height) *
+  PIECE_SCALE_FACTOR;
 pieceCanvas.height = pieceCanvas.width;
 
 const hexCanvas = document.createElement("canvas");
 const hexCtx = hexCanvas.getContext("2d");
-hexCanvas.width = sample.width * 2;
-hexCanvas.height = sample.height * 2;
-document.body.appendChild(pieceCanvas);
-pieceCanvas.style.position = "fixed";
-pieceCanvas.style.right = 0;
-pieceCanvas.style.bottom = 0;
-pieceCanvas.style.border = "1px solid #FFF";
-pieceCanvas.style.background = "rgba(255, 255, 0, 0.3)";
+hexCanvas.width = sample.width * PIECE_SCALE_FACTOR;
+hexCanvas.height = sample.height * PIECE_SCALE_FACTOR;
+
+function isMouseInHex(hex) {
+  return (
+    mouse.x >= hex.left &&
+    mouse.x <= hex.left + hex.width &&
+    mouse.y >= hex.top &&
+    mouse.y <= hex.top + hex.height
+  );
+}
+
+function drawLine() {
+  requestAnimationFrame(() => {
+    let highlightedHexagon;
+    let highlightedTriangle;
+    grid.filter(isMouseInHex).forEach((hex) => {
+      if (!highlightedTriangle) {
+        highlightedTriangle = hex.triangles.find((tri) =>
+          isInTriangle(mouse, tri)
+        );
+        if (highlightedTriangle) {
+          highlightedHexagon = hex;
+        }
+      }
+    });
+    if (highlightedTriangle) {
+      const local = mouse
+        .clone()
+        .sub(highlightedHexagon.center)
+        .mult(PIECE_SCALE_FACTOR);
+
+      // translate main canvas angle into piece canvas one
+      local.angle -= highlightedTriangle.angle - Math.PI / 4;
+
+      // todo: better line drawing
+      pieceCtx.fillStyle = params.foregroundColor;
+      pieceCtx.beginPath();
+      pieceCtx.arc(
+        local.x,
+        local.y,
+        params.penWidth * PIECE_SCALE_FACTOR,
+        0,
+        Math.PI * 2
+      );
+      pieceCtx.fill();
+    }
+    forceRender();
+  });
+}
+
+let inDraw = false;
+let shouldRender = true;
+function forceRender() {
+  shouldRender = true;
+}
+canvas.addEventListener("mousedown", (e) => {
+  inDraw = true;
+  mouse.x = e.pageX;
+  mouse.y = e.pageY;
+  drawLine();
+});
+document.addEventListener("mouseup", () => {
+  inDraw = false;
+});
+const mouse = Vector.cartesian(0, 0);
+document.addEventListener("mousemove", (e) => {
+  mouse.x = e.pageX;
+  mouse.y = e.pageY;
+  if (!inDraw) {
+    return;
+  }
+  drawLine();
+});
 
 runWithFps(() => {
-  const highlightedHexagons = grid.filter((hex) => {
-    const [x1, y1, x2, y2] = hex.boundingBox;
-    return mouse.x >= x1 && mouse.x <= x2 && mouse.y >= y1 && mouse.y <= y2;
-  });
-  let highlightedHexagon;
-  let highlightedTriangle;
-
-  highlightedHexagons.forEach((hex) => {
-    if (!highlightedTriangle) {
-      highlightedTriangle = hex.triangles.find((tri) =>
-        PointInTriangle(mouse, tri.a, tri.b, tri.c)
-      );
-      if (highlightedTriangle) {
-        highlightedHexagon = hex;
-      }
-    }
-  });
-
-  pieceCanvas.width = pieceCanvas.width;
-  hexCanvas.width = hexCanvas.width;
-  canvas.width = canvas.width;
-
-  pieceCtx.fillStyle = "rgba(255, 255, 0, 0.2)";
-  pieceCtx.strokeStyle = "#fff";
-  // pieceCtx.fillRect(0, 0, pieceCanvas.width, pieceCanvas.height);
-  pieceCtx.lineWidth = 4;
-  pieceCtx.beginPath();
-  pieceCtx.moveTo(0, 0);
-  pieceCtx.lineTo(20, 20);
-  pieceCtx.stroke();
-
-  if (highlightedTriangle) {
-    const angle = Math.atan2(
-      highlightedHexagon.center.y - mouse.y,
-      highlightedHexagon.center.x - mouse.x
-    );
-    const dist = Vector.dist(mouse, highlightedHexagon.center);
-    const local = Vector.polar(angle, dist);
-    
-
-    pieceCtx.fillStyle = "#FFF";
-    pieceCtx.beginPath();
-    pieceCtx.arc(local.x * 2, local.y * 2, 4, 0, Math.PI * 2);
-    pieceCtx.fill();
-
-    ctx.strokeStyle = "#FFF";
-    ctx.beginPath();
-    ctx.arc(
-      highlightedHexagon.center.x,
-      highlightedHexagon.center.y,
-      7,
-      0,
-      Math.PI * 2
-    );
-    ctx.stroke();
+  if (!shouldRender) {
+    return false;
   }
+  shouldRender = false;
+  hexCanvas.width = hexCanvas.width;
+
+  ctx.fillStyle = `rgb(${params.backgroundColor.join(",")})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   sample.triangles.forEach((tri) => {
     hexCtx.save();
@@ -139,30 +167,29 @@ runWithFps(() => {
   });
 
   grid.forEach((hex) => {
-    hex.triangles.forEach((tri, i) => {
-      ctx.fillStyle = `hsl(${i}00, 50%, 50%)`;
-      ctx.strokeStyle = ctx.fillStyle;
-
-      ctx.beginPath();
-      ctx.moveTo(tri.a.x, tri.a.y);
-      ctx.lineTo(tri.b.x, tri.b.y);
-      ctx.lineTo(tri.c.x, tri.c.y);
-      ctx.lineTo(tri.a.x, tri.a.y);
-
-      if (tri === highlightedTriangle) {
-        ctx.stroke();
+    if (params.showCenters) {
+      if (isTooBright(params.backgroundColor)) {
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+      } else {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
       }
-
-      const c = getCentroid(tri);
-      ctx.fillText(i, c.x, c.y);
-    });
-
+      ctx.beginPath();
+      ctx.lineWidth = PIECE_SCALE_FACTOR;
+      ctx.arc(
+        hex.center.x * PIECE_SCALE_FACTOR,
+        hex.center.y * PIECE_SCALE_FACTOR,
+        5 * PIECE_SCALE_FACTOR,
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
+    }
     ctx.drawImage(
       hexCanvas,
-      hex.boundingBox[0],
-      hex.boundingBox[1],
-      hexCanvas.width / 2,
-      hexCanvas.height / 2
+      hex.boundingBox[0] * PIECE_SCALE_FACTOR,
+      hex.boundingBox[1] * PIECE_SCALE_FACTOR,
+      hexCanvas.width,
+      hexCanvas.height
     );
   });
-}, 10);
+}, 60);
