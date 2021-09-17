@@ -35,19 +35,33 @@ gui.add(params, "erase");
 
 const grid = [];
 
-const CELL_SIZE = 150;
+const CELL_SIZE = 200;
 const sample = new Hexagon(0, 0, CELL_SIZE);
-let y = -sample.height;
-// todo: do not prebuild grid it's wasteful and unnecessary
-for (let i = 0; i < Math.ceil(canvas.height / CELL_SIZE) + 5; i += 1) {
-  let x = -sample.width - (i % 2 ? sample.width / 2 : 0);
-  for (let j = 0; j < Math.ceil(canvas.width / CELL_SIZE) + 5; j += 1) {
-    // const shiftY = j % 2 ? sample.verticalShiftSize : 0;
-    grid.push(new Hexagon(x, y, CELL_SIZE));
-    x += sample.width;
+function calcGrid() {
+  grid.splice(0);
+  let y = -sample.height;
+  let i = 0;
+  // todo: try to go without a lot of hexes again
+  while (y < window.innerHeight) {
+    let x = -sample.width - (i % 2 ? sample.width / 2 : 0);
+    while (x < window.innerWidth) {
+      grid.push(new Hexagon(x, y, CELL_SIZE));
+      x += sample.width;
+    }
+    y += sample.height - sample.height / 4;
+    i += 1;
   }
-  y += sample.height - sample.height / 4;
 }
+calcGrid();
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth * PIECE_SCALE_FACTOR;
+  canvas.height = window.innerHeight * PIECE_SCALE_FACTOR;
+  requestAnimationFrame(() => {
+    calcGrid();
+    forceRender();
+  });
+});
 
 function sign(a, b, c) {
   return (a.x - c.x) * (b.y - c.y) - (b.x - c.x) * (a.y - c.y);
@@ -76,37 +90,37 @@ const hexCtx = hexCanvas.getContext("2d");
 hexCanvas.width = sample.width * PIECE_SCALE_FACTOR;
 hexCanvas.height = sample.height * PIECE_SCALE_FACTOR;
 
-function isMouseInHex(hex) {
+function isPosHex(pos, hex) {
   return (
-    mouse.x >= hex.left &&
-    mouse.x <= hex.left + hex.width &&
-    mouse.y >= hex.top &&
-    mouse.y <= hex.top + hex.height
+    pos.x >= hex.left &&
+    pos.x <= hex.left + hex.width &&
+    pos.y >= hex.top &&
+    pos.y <= hex.top + hex.height
   );
+}
+
+function findTriangle(grid, pos) {
+  for (const hex of grid.filter((hex) => isPosHex(pos, hex))) {
+    const findInPos = hex.triangles.find((tri) => isInTriangle(pos, tri));
+    if (findInPos) {
+      return [hex, findInPos];
+    }
+  }
+  return [null, null];
 }
 
 function drawLine() {
   requestAnimationFrame(() => {
-    let highlightedHexagon;
-    let highlightedTriangle;
-    grid.filter(isMouseInHex).forEach((hex) => {
-      if (!highlightedTriangle) {
-        highlightedTriangle = hex.triangles.find((tri) =>
-          isInTriangle(mouse, tri)
-        );
-        if (highlightedTriangle) {
-          highlightedHexagon = hex;
-        }
-      }
-    });
-    if (highlightedTriangle) {
+    const [targetHexagon, targetTriangle] = findTriangle(grid, mouse);
+
+    if (targetTriangle) {
       const local = mouse
         .clone()
-        .sub(highlightedHexagon.center)
+        .sub(targetHexagon.center)
         .mult(PIECE_SCALE_FACTOR);
 
       // translate main canvas angle into piece canvas one
-      local.angle -= highlightedTriangle.angle - Math.PI / 4;
+      local.angle -= targetTriangle.angle - Math.PI / 4;
 
       // todo: better line drawing
       pieceCtx.fillStyle = params.foregroundColor;
