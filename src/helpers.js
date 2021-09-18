@@ -5,7 +5,6 @@ const downloadLink = document.createElement("a");
 document.body.appendChild(downloadLink);
 downloadLink.style = "display: none";
 export function downloadCanvas(canvas, filename) {
-  console.log(canvas, filename);
   canvas.toBlob((blob) => {
     const url = URL.createObjectURL(blob);
     downloadLink.href = url;

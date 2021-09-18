@@ -1,5 +1,3 @@
-import { isTooBright, SCALE_FACTOR } from "./helpers";
-
 export function makeBrushCursor(target) {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
