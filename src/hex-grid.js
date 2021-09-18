@@ -150,6 +150,14 @@ export class HexagonalGrid {
       );
     });
   }
+
+  draw(tool, pos) {
+    const piecePos = this.translatePosition(pos);
+
+    if (piecePos) {
+      tool.draw(this.pieceCtx, piecePos);
+    }
+  }
 }
 
 export class Triangle {
