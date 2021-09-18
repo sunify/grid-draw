@@ -14,3 +14,7 @@ export function downloadCanvas(canvas, filename) {
     URL.revokeObjectURL(url);
   }, "image/png");
 }
+
+export function rgba(color, alpha = 1) {
+  return `rgba(${color.join(",")}, ${alpha})`;
+}
