@@ -59,11 +59,9 @@ export class PoorManPen {
     const localPos = grid.translatePosition(pos);
     ctx.save();
     ctx.fillStyle = this.color;
-    ctx.strokeStyle = this.color;
     if (this.prevPos) {
-      const steps = Math.floor(
-        pos.clone().sub(this.prevPos).magnitude / (this.size * 0.5)
-      );
+      const strokeLength = pos.clone().sub(this.prevPos).magnitude;
+      const steps = Math.floor(strokeLength / (this.size * 0.5));
       for (let i = 0; i < steps; i += 1) {
         const interStep = grid.translatePosition(
           lerpV(this.prevPos, pos, i / steps)
@@ -82,7 +80,7 @@ export class PoorManPen {
     ctx.beginPath();
     ctx.arc(localPos.x, localPos.y, this.size * SCALE_FACTOR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
+    ctx.save();
     this.prevPos = pos;
   }
 }
