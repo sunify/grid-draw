@@ -54,6 +54,10 @@ export class HexagonalGrid {
     return this._cellSize;
   }
 
+  get drawingContext() {
+    return this.pieceCtx;
+  }
+
   _findTriangle(pos) {
     for (const hex of this.grid.filter((hex) => isPosHex(pos, hex))) {
       const i = hex.triangles.findIndex((tri) => tri.isInTriangle(pos));
@@ -149,14 +153,6 @@ export class HexagonalGrid {
         this.hexCanvas.height
       );
     });
-  }
-
-  draw(tool, pos) {
-    const piecePos = this.translatePosition(pos);
-
-    if (piecePos) {
-      tool.draw(this.pieceCtx, piecePos);
-    }
   }
 }
 

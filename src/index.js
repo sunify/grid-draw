@@ -43,7 +43,7 @@ canvas.style.cursor = pen.cursor;
 
 const pointer = Vector.cartesian(0, 0);
 function drawLine() {
-  hexGrid.draw(pen, pointer);
+  pen.draw(hexGrid, pointer);
   forceRender();
 }
 
