@@ -3,10 +3,25 @@ import { SCALE_FACTOR } from "./helpers";
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
 
+function lerpV(v1, v2, t) {
+  return v1.clone().add(v2.clone().sub(v1).mult(t));
+}
+
 export class PoorManPen {
   constructor(size, color) {
     this.size = size;
     this.color = color;
+    this._drawing = false;
+    this.prevPos = null;
+  }
+
+  startStroke() {
+    this._drawing = true;
+    this.prevPos = null;
+  }
+
+  endStroke() {
+    this._drawing = true;
   }
 
   get cursor() {
@@ -28,8 +43,26 @@ export class PoorManPen {
 
   draw(ctx, pos) {
     ctx.fillStyle = this.color;
+    if (this.prevPos) {
+      const steps = Math.floor(
+        pos.clone().sub(this.prevPos).magnitude / (this.size * 0.75)
+      );
+      for (let i = 0; i < steps; i += 1) {
+        const interStep = lerpV(this.prevPos, pos, i / steps);
+        ctx.beginPath();
+        ctx.arc(
+          interStep.x,
+          interStep.y,
+          this.size * SCALE_FACTOR,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, this.size * SCALE_FACTOR, 0, Math.PI * 2);
     ctx.fill();
+    this.prevPos = pos;
   }
 }

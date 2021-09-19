@@ -29,8 +29,9 @@ canvas.style.left = "0";
  * - [*] поправить размеры курсора
  * - [*] вынести логику сетки (создания, вычисления координат на pieceCanvas) в отдельный модуль
  * - [*] абстрагировать логику рисования на pieceCanvas
- * - [ ] попробовать реализовать другую сетку (квадратную?)
+ * - [ ] квадратная сетка
  * - [ ] центральная сетка (когда экран разбит на секторы из центра)
+ * - [ ] нормальная кисть
  */
 
 const hexGrid = new HexagonalGrid(params.cellSize, params.caleido);
@@ -73,6 +74,7 @@ runWithFps(() => {
 let inDraw = false;
 canvas.addEventListener("mousedown", (e) => {
   inDraw = true;
+  pen.startStroke();
   pointer.x = e.pageX;
   pointer.y = e.pageY;
   drawLine();
@@ -81,6 +83,7 @@ canvas.addEventListener("touchstart", (e) => {
   if (e.touches.length === 1) {
     e.preventDefault();
     inDraw = true;
+    pen.startStroke();
     pointer.x = e.pageX;
     pointer.y = e.pageY;
     drawLine();
@@ -88,9 +91,11 @@ canvas.addEventListener("touchstart", (e) => {
 });
 document.addEventListener("mouseup", () => {
   inDraw = false;
+  pen.endStroke();
 });
 document.addEventListener("touchend", () => {
   inDraw = false;
+  pen.endStroke();
 });
 const handleMove = (e) => {
   pointer.x = e.pageX;
