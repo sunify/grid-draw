@@ -1,11 +1,7 @@
-import { SCALE_FACTOR } from "./helpers";
+import { SCALE_FACTOR, lerpV } from "./helpers";
 
 const cursorCanvas = document.createElement("canvas");
 const cursorCtx = cursorCanvas.getContext("2d");
-
-function lerpV(v1, v2, t) {
-  return v1.clone().add(v2.clone().sub(v1).mult(t));
-}
 
 export class PoorManPen {
   constructor(size, color) {

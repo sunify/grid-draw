@@ -17,3 +17,7 @@ export function downloadCanvas(canvas, filename) {
 export function rgba(color, alpha = 1) {
   return `rgba(${color.join(",")}, ${alpha})`;
 }
+
+export function lerpV(v1, v2, t) {
+  return v1.clone().add(v2.clone().sub(v1).mult(t));
+}

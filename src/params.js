@@ -47,6 +47,7 @@ export const params = {
   cellSize: 200,
   caleido: false,
   showGrid: true,
+  gridType: "hex",
   erase() {
     fireCallbacks(_eraseCallbacks);
   },
@@ -78,5 +79,11 @@ gui
 gui
   .add(params, "caleido")
   .onChange((value) => handleParamChange("caleido", value));
+gui
+  .add(params, "gridType", {
+    Hexagon: "hex",
+    Square: "quad"
+  })
+  .onChange((value) => handleParamChange("gridType", value));
 gui.add(params, "erase");
 gui.add(params, "download");

@@ -5,6 +5,7 @@ import { Vector } from "v-for-vector";
 import { rgba, downloadCanvas, isTooBright, SCALE_FACTOR } from "./helpers";
 import { params, onParamChange, onErase, onDownload } from "./params";
 import { HexagonalGrid } from "./hex-grid";
+import { QuadGrid } from "./quad-grid";
 import { PoorManPen } from "./poor-man-pen";
 
 const canvas = document.getElementById("app");
@@ -12,11 +13,6 @@ const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth * SCALE_FACTOR;
 canvas.height = window.innerHeight * SCALE_FACTOR;
-canvas.style.positon = "fixed";
-canvas.style.width = "100%";
-canvas.style.height = "100%";
-canvas.style.top = "0";
-canvas.style.left = "0";
 
 /**
  * ToDo:
@@ -30,11 +26,23 @@ canvas.style.left = "0";
  * - [*] вынести логику сетки (создания, вычисления координат на pieceCanvas) в отдельный модуль
  * - [*] абстрагировать логику рисования на pieceCanvas
  * - [*] нормальная кисть (sort of)
- * - [ ] квадратная сетка
+ * - [*] квадратная сетка
+ * - [ ] рисовать на pieceCanvas не из угла, а с паддингом
+ *       чтобы на границах квадратной (и иногда шестиугольной) сетки избежать артефактов
+ * - [ ] ??? вынести pieceCanvas из классов сеток чтобы сохранять
+ *       его состояние при переключении сетки и удобнее делать пред пункт
  * - [ ] центральная сетка (когда экран разбит на секторы из центра)
  */
 
-const hexGrid = new HexagonalGrid(params.cellSize, params.caleido);
+const grids = {
+  quad: new QuadGrid(params.cellSize, params.caleido),
+  hex: new HexagonalGrid(params.cellSize, params.caleido)
+};
+
+function getGrid() {
+  return grids[params.gridType];
+}
+
 const pen = new PoorManPen(
   params.penWidth,
   rgba(params.foregroundColor, params.foregroundAlpha)
@@ -43,7 +51,7 @@ canvas.style.cursor = pen.cursor;
 
 const pointer = Vector.cartesian(0, 0);
 function drawLine() {
-  pen.draw(hexGrid, pointer);
+  pen.draw(getGrid(), pointer);
   forceRender();
 }
 
@@ -66,9 +74,9 @@ runWithFps(() => {
     ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
   }
   if (params.showGrid) {
-    hexGrid.renderGrid(ctx);
+    getGrid().renderGrid(ctx);
   }
-  hexGrid.render(ctx);
+  getGrid().render(ctx);
 }, 60);
 
 let inDraw = false;
@@ -116,7 +124,7 @@ window.addEventListener("resize", () => {
   canvas.width = window.innerWidth * SCALE_FACTOR;
   canvas.height = window.innerHeight * SCALE_FACTOR;
   requestAnimationFrame(() => {
-    hexGrid.resize();
+    getGrid().resize();
     forceRender();
   });
 });
@@ -131,10 +139,15 @@ onParamChange((param) => {
     pen.color = rgba(params.foregroundColor, params.foregroundAlpha);
   }
   if (param === "cellSize") {
-    hexGrid.cellSize = params.cellSize;
+    getGrid().cellSize = params.cellSize;
   }
   if (param === "caleido") {
-    hexGrid.caleido = params.caleido;
+    getGrid().caleido = params.caleido;
+  }
+  if (param === "gridType") {
+    getGrid().resize();
+    getGrid().cellSize = params.cellSize;
+    getGrid().caleido = params.caleido;
   }
 
   if (!nonRerenderParams.includes(param)) {
@@ -143,7 +156,9 @@ onParamChange((param) => {
 });
 
 onErase(() => {
-  hexGrid.clean();
+  Object.values(grids).forEach((g) => {
+    g.clean();
+  });
   forceRender();
 });
 
