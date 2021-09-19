@@ -11,11 +11,8 @@ function isPosHex(pos, hex) {
 }
 
 export class HexagonalGrid {
-  constructor(cellSize, caleido = false) {
-    this.pieceCanvas = document.createElement("canvas");
-    this.pieceCtx = this.pieceCanvas.getContext("2d");
-    this.pieceCanvas.width = 500;
-    this.pieceCanvas.height = this.pieceCanvas.width;
+  constructor(pieceCtx, cellSize, caleido = false) {
+    this.pieceCtx = pieceCtx;
     this.flipCanvas = document.createElement("canvas");
     this.flipCtx = this.flipCanvas.getContext("2d");
     this.hexCanvas = document.createElement("canvas");
@@ -107,24 +104,21 @@ export class HexagonalGrid {
     });
   }
 
-  clean() {
-    this.pieceCanvas.width = this.pieceCanvas.width;
-  }
-
   resize() {
     this._calcGrid();
   }
 
   render(ctx) {
+    const pieceCanvas = this.pieceCtx.canvas;
     this.hexCanvas.width = this.hexCanvas.width;
 
     if (this.caleido) {
-      this.flipCanvas.width = this.pieceCanvas.width;
-      this.flipCanvas.height = this.pieceCanvas.height;
+      this.flipCanvas.width = pieceCanvas.width;
+      this.flipCanvas.height = pieceCanvas.height;
       this.flipCtx.save();
       this.flipCtx.scale(-1, 1);
       this.flipCtx.rotate(Math.PI / 2);
-      this.flipCtx.drawImage(this.pieceCanvas, 0, 0);
+      this.flipCtx.drawImage(pieceCanvas, 0, 0);
       this.flipCtx.restore();
     }
 
@@ -137,7 +131,7 @@ export class HexagonalGrid {
       let angle = tri.angle - Math.PI / 4 - (Math.PI * 2) / 6;
       this.hexCtx.rotate(angle);
       this.hexCtx.drawImage(
-        i % 2 || !this.caleido ? this.pieceCanvas : this.flipCanvas,
+        i % 2 || !this.caleido ? pieceCanvas : this.flipCanvas,
         0,
         0
       );

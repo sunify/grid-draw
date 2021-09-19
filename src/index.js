@@ -14,6 +14,11 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth * SCALE_FACTOR;
 canvas.height = window.innerHeight * SCALE_FACTOR;
 
+const pieceCanvas = document.createElement("canvas");
+const pieceCtx = pieceCanvas.getContext("2d");
+pieceCanvas.width = 500;
+pieceCanvas.height = pieceCanvas.width;
+
 /**
  * ToDo:
  * - [*] ресайз CELL_SIZE через dat.gui
@@ -27,16 +32,18 @@ canvas.height = window.innerHeight * SCALE_FACTOR;
  * - [*] абстрагировать логику рисования на pieceCanvas
  * - [*] нормальная кисть (sort of)
  * - [*] квадратная сетка
+ * - [*] вынести pieceCanvas из классов сеток чтобы сохранять
+ *       его состояние при переключении сетки и удобнее делать пред пункт
  * - [ ] рисовать на pieceCanvas не из угла, а с паддингом
  *       чтобы на границах квадратной (и иногда шестиугольной) сетки избежать артефактов
- * - [ ] ??? вынести pieceCanvas из классов сеток чтобы сохранять
- *       его состояние при переключении сетки и удобнее делать пред пункт
  * - [ ] центральная сетка (когда экран разбит на секторы из центра)
+ * - [ ] dry классы сеток и вынести общий код
+ * - [ ] сохранять pieceCanvas в ls?
  */
 
 const grids = {
-  quad: new QuadGrid(params.cellSize, params.caleido),
-  hex: new HexagonalGrid(params.cellSize, params.caleido)
+  quad: new QuadGrid(pieceCtx, params.cellSize, params.caleido),
+  hex: new HexagonalGrid(pieceCtx, params.cellSize, params.caleido)
 };
 
 function getGrid() {
@@ -44,6 +51,7 @@ function getGrid() {
 }
 
 const pen = new PoorManPen(
+  pieceCtx,
   params.penWidth,
   rgba(params.foregroundColor, params.foregroundAlpha)
 );
@@ -156,9 +164,7 @@ onParamChange((param) => {
 });
 
 onErase(() => {
-  Object.values(grids).forEach((g) => {
-    g.clean();
-  });
+  pieceCanvas.width = pieceCanvas.width;
   forceRender();
 });
 

@@ -2,11 +2,8 @@ import { Vector } from "v-for-vector";
 import { SCALE_FACTOR } from "./helpers";
 
 export class QuadGrid {
-  constructor(cellSize, caleido = false) {
-    this.pieceCanvas = document.createElement("canvas");
-    this.pieceCtx = this.pieceCanvas.getContext("2d");
-    this.pieceCanvas.width = 500;
-    this.pieceCanvas.height = this.pieceCanvas.width;
+  constructor(pieceCtx, cellSize, caleido = false) {
+    this.pieceCtx = pieceCtx;
     this.flipCanvas = document.createElement("canvas");
     this.flipCtx = this.flipCanvas.getContext("2d");
     this.cellCanvas = document.createElement("canvas");
@@ -105,17 +102,14 @@ export class QuadGrid {
     ctx.restore();
   }
 
-  clean() {
-    this.pieceCanvas.width = this.pieceCanvas.width;
-  }
-
   resize() {
     this._calcGrid();
   }
 
   render(ctx) {
-    const { cellCanvas, cellCtx, flipCtx, flipCanvas, pieceCanvas } = this;
+    const { cellCanvas, cellCtx, flipCtx, flipCanvas, pieceCtx } = this;
     cellCanvas.width = this.cellCanvas.width;
+    const pieceCanvas = pieceCtx.canvas;
 
     if (this.caleido) {
       flipCanvas.width = pieceCanvas.width;

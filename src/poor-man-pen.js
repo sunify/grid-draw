@@ -4,7 +4,8 @@ const cursorCanvas = document.createElement("canvas");
 const cursorCtx = cursorCanvas.getContext("2d");
 
 export class PoorManPen {
-  constructor(size, color) {
+  constructor(drawingContext, size, color) {
+    this.drawingContext = drawingContext;
     this.size = size;
     this.color = color;
     this._drawing = false;
@@ -50,7 +51,7 @@ export class PoorManPen {
   }
 
   draw(grid, cursorPos) {
-    const ctx = grid.drawingContext;
+    const ctx = this.drawingContext;
     const pos = cursorPos.clone();
     const localPos = grid.translatePosition(pos);
     ctx.save();
