@@ -130,10 +130,20 @@ export class HexagonalGrid {
       );
       let angle = tri.angle - Math.PI / 4 - (Math.PI * 2) / 6;
       this.hexCtx.rotate(angle);
+      this.hexCtx.translate(
+        -this.hexCanvas.width / 2,
+        -this.hexCanvas.height / 2
+      );
       this.hexCtx.drawImage(
         i % 2 || !this.caleido ? pieceCanvas : this.flipCanvas,
         0,
-        0
+        0,
+        pieceCanvas.width,
+        pieceCanvas.height,
+        (this.hexCanvas.width - pieceCanvas.width) / 2,
+        (this.hexCanvas.height - pieceCanvas.height) / 2,
+        pieceCanvas.width,
+        pieceCanvas.height
       );
       this.hexCtx.restore();
     });

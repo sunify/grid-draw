@@ -16,8 +16,11 @@ canvas.height = window.innerHeight * SCALE_FACTOR;
 
 const pieceCanvas = document.createElement("canvas");
 const pieceCtx = pieceCanvas.getContext("2d");
-pieceCanvas.width = 500;
+pieceCanvas.width = 1000;
 pieceCanvas.height = pieceCanvas.width;
+pieceCanvas.classList.add("piece");
+
+// document.body.appendChild(pieceCanvas);
 
 /**
  * ToDo:
@@ -34,8 +37,9 @@ pieceCanvas.height = pieceCanvas.width;
  * - [*] квадратная сетка
  * - [*] вынести pieceCanvas из классов сеток чтобы сохранять
  *       его состояние при переключении сетки и удобнее делать пред пункт
- * - [ ] рисовать на pieceCanvas не из угла, а с паддингом
+ * - [*] рисовать на pieceCanvas не из угла, а из центра
  *       чтобы на границах квадратной (и иногда шестиугольной) сетки избежать артефактов
+ * - [ ] пофиксить глитчи на стыках сеток
  * - [ ] центральная сетка (когда экран разбит на секторы из центра)
  * - [ ] dry классы сеток и вынести общий код
  * - [ ] сохранять pieceCanvas в ls?

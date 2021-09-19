@@ -1,3 +1,4 @@
+import { Vector } from "v-for-vector";
 import { SCALE_FACTOR, lerpV } from "./helpers";
 
 const cursorCanvas = document.createElement("canvas");
@@ -53,16 +54,20 @@ export class PoorManPen {
   draw(grid, cursorPos) {
     const ctx = this.drawingContext;
     const pos = cursorPos.clone();
-    const localPos = grid.translatePosition(pos);
+    const ctxCenter = Vector.cartesian(
+      ctx.canvas.width / 2,
+      ctx.canvas.height / 2
+    );
+    const localPos = grid.translatePosition(pos).add(ctxCenter);
     ctx.save();
     ctx.fillStyle = this.color;
     if (this.prevPos) {
       const strokeLength = pos.clone().sub(this.prevPos).magnitude;
       const steps = Math.floor(strokeLength / (this.size * 0.5));
       for (let i = 0; i < steps; i += 1) {
-        const interStep = grid.translatePosition(
-          lerpV(this.prevPos, pos, i / steps)
-        );
+        const interStep = grid
+          .translatePosition(lerpV(this.prevPos, pos, i / steps))
+          .add(ctxCenter);
         ctx.beginPath();
         ctx.arc(
           interStep.x,

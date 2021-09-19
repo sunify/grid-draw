@@ -123,13 +123,21 @@ export class QuadGrid {
 
     for (let i = 0; i < 4; i += 1) {
       const angle = ((Math.PI * 2) / 4) * i;
+
       cellCtx.save();
       cellCtx.translate(cellCanvas.width / 2, cellCanvas.height / 2);
       cellCtx.rotate(angle);
+      cellCtx.translate(-cellCanvas.width / 2, -cellCanvas.height / 2);
       cellCtx.drawImage(
         i % 2 || !this.caleido ? pieceCanvas : flipCanvas,
         0,
-        0
+        0,
+        pieceCanvas.width,
+        pieceCanvas.height,
+        (cellCanvas.width - pieceCanvas.width) / 2,
+        (cellCanvas.height - pieceCanvas.height) / 2,
+        pieceCanvas.width,
+        pieceCanvas.height
       );
       cellCtx.restore();
     }
