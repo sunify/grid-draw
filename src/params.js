@@ -48,6 +48,7 @@ export const params = {
   caleido: false,
   showGrid: true,
   gridType: "hex",
+  polarSections: 12,
   erase() {
     fireCallbacks(_eraseCallbacks);
   },
@@ -74,6 +75,9 @@ gui
   .add(params, "cellSize", 50, 500, 10)
   .onChange((value) => handleParamChange("cellSize", value));
 gui
+  .add(params, "polarSections", 2, 20, 2)
+  .onChange((value) => handleParamChange("polarSections", value));
+gui
   .add(params, "showGrid")
   .onChange((value) => handleParamChange("showGrid", value));
 gui
@@ -82,7 +86,8 @@ gui
 gui
   .add(params, "gridType", {
     Hexagon: "hex",
-    Square: "quad"
+    Square: "quad",
+    Polar: "polar"
   })
   .onChange((value) => handleParamChange("gridType", value));
 gui.add(params, "erase");

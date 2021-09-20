@@ -6,17 +6,19 @@ import { rgba, downloadCanvas, isTooBright, SCALE_FACTOR } from "./helpers";
 import { params, onParamChange, onErase, onDownload } from "./params";
 import { HexagonalGrid } from "./hex-grid";
 import { QuadGrid } from "./quad-grid";
+import { PolarGrid } from "./polar-grid";
 import { PoorManPen } from "./poor-man-pen";
 
 const canvas = document.getElementById("app");
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { alpha: false });
 
 canvas.width = window.innerWidth * SCALE_FACTOR;
 canvas.height = window.innerHeight * SCALE_FACTOR;
 
 const pieceCanvas = document.createElement("canvas");
 const pieceCtx = pieceCanvas.getContext("2d");
-pieceCanvas.width = 1000;
+pieceCanvas.width =
+  Math.max(window.innerWidth, window.innerHeight) * SCALE_FACTOR;
 pieceCanvas.height = pieceCanvas.width;
 pieceCanvas.classList.add("piece");
 
@@ -39,15 +41,22 @@ pieceCanvas.classList.add("piece");
  *       его состояние при переключении сетки и удобнее делать пред пункт
  * - [*] рисовать на pieceCanvas не из угла, а из центра
  *       чтобы на границах квадратной (и иногда шестиугольной) сетки избежать артефактов
- * - [ ] пофиксить глитчи на стыках сеток
  * - [ ] центральная сетка (когда экран разбит на секторы из центра)
+ * - [ ] perf, генерировать для шестиугольной сетки «паттерн» и заливать им холст, как у квадратной
+ * - [ ] пофиксить глитчи на стыках сеток
  * - [ ] dry классы сеток и вынести общий код
  * - [ ] сохранять pieceCanvas в ls?
  */
 
 const grids = {
   quad: new QuadGrid(pieceCtx, params.cellSize, params.caleido),
-  hex: new HexagonalGrid(pieceCtx, params.cellSize, params.caleido)
+  hex: new HexagonalGrid(pieceCtx, params.cellSize, params.caleido),
+  polar: new PolarGrid(
+    pieceCtx,
+    params.cellSize,
+    params.caleido,
+    params.polarSections
+  )
 };
 
 function getGrid() {
@@ -63,8 +72,10 @@ canvas.style.cursor = pen.cursor;
 
 const pointer = Vector.cartesian(0, 0);
 function drawLine() {
-  pen.draw(getGrid(), pointer);
-  forceRender();
+  requestAnimationFrame(() => {
+    pen.draw(getGrid(), pointer);
+    forceRender();
+  });
 }
 
 let shouldRender = true;
@@ -160,6 +171,9 @@ onParamChange((param) => {
     getGrid().resize();
     getGrid().cellSize = params.cellSize;
     getGrid().caleido = params.caleido;
+  }
+  if (param === "polarSections") {
+    grids.polar.sectionsCount = params.polarSections;
   }
 
   if (!nonRerenderParams.includes(param)) {
