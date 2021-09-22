@@ -18,7 +18,7 @@ canvas.height = window.innerHeight * SCALE_FACTOR;
 const pieceCanvas = document.createElement("canvas");
 const pieceCtx = pieceCanvas.getContext("2d");
 pieceCanvas.width =
-  Math.max(window.innerWidth, window.innerHeight) * SCALE_FACTOR;
+  Math.max(window.innerWidth, window.innerHeight) * SCALE_FACTOR * 1.5;
 pieceCanvas.height = pieceCanvas.width;
 pieceCanvas.classList.add("piece");
 

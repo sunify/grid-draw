@@ -1,4 +1,5 @@
 import { Vector } from "v-for-vector";
+import smooth from "chaikin-smooth";
 import { SCALE_FACTOR, lerpV } from "./helpers";
 
 const cursorCanvas = document.createElement("canvas");
